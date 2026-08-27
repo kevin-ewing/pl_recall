@@ -17,6 +17,16 @@ const STORAGE_KEY = 'player-lab-progress-v1';
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
 const publicUrl = (value: string | null) => value?.startsWith('/') ? `${BASE_PATH}${value}` : value ?? '';
 
+const cardName = (player: Player) => {
+  const displayName = (player.displayName ?? player.name).trim();
+  const recordedSurname = player.lastName.trim();
+  const surname = recordedSurname && displayName.toLocaleLowerCase().endsWith(recordedSurname.toLocaleLowerCase())
+    ? recordedSurname
+    : displayName.split(/\s+/).at(-1) ?? displayName;
+  const givenName = displayName.slice(0, Math.max(0, displayName.length - surname.length)).trim();
+  return { givenName, surname };
+};
+
 const shuffle = <T,>(items: T[]) => {
   const next = [...items];
   for (let i = next.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [next[i], next[j]] = [next[j], next[i]]; }
@@ -81,6 +91,7 @@ export default function Home() {
   }), [players, club, position, country, hqOnly, query]);
   const lookup = useMemo(() => new Map(players.map((player) => [player.id, player])), [players]);
   const current = queue[0] ? lookup.get(queue[0]) : undefined;
+  const currentCardName = current ? cardName(current) : undefined;
   const clubs = useMemo(() => [...new Set(players.map((player) => player.club).filter(Boolean))].sort(), [players]);
   const countries = useMemo(() => [...new Set(players.map((player) => player.country).filter(Boolean))].sort(), [players]);
   const positions = useMemo(() => [...new Set(players.map((player) => player.position).filter(Boolean))].sort(), [players]);
@@ -114,7 +125,7 @@ export default function Home() {
       setCardSerial((serial) => serial + 1);
       setExitDirection(null);
       advanceTimer.current = null;
-    }, 150);
+    }, 100);
   }
   const restart = () => {
     if (advanceTimer.current) window.clearTimeout(advanceTimer.current);
@@ -144,9 +155,9 @@ export default function Home() {
       </aside>
       <section className="stage" aria-live="polite"><div className="toolbar"><button className="filter-toggle" onClick={() => setShowFilters((state) => !state)}>☰ Filters {activeFilters ? `(${activeFilters})` : ''}</button><p><span>MASTERED</span><b>{mastered} / {deck.length}</b></p><button className="restart" onClick={restart}>↻ Restart deck</button></div><div className="meter"><span style={{ width: `${deck.length ? mastered / deck.length * 100 : 0}%` }} /></div>
         {!current && deck.length > 0 ? <div className="finish"><div>✦</div><p className="eyebrow">Deck complete</p><h2>Every card is cleared.</h2><p>You&rsquo;ve marked all {deck.length} players as known.</p><button onClick={restart}>Run it again</button><button className="plain" onClick={reset}>Reset progress</button></div>
-        : current ? <><div className="counter"><span>Card {Math.max(deck.length - queue.length + 1, 1)} of {deck.length}</span><span>{advanceNote || (flipped ? 'Rate your recall' : 'Tap the card to reveal')}</span></div><div className="card-stack"><span className="stack-card stack-card-two" /><span className="stack-card stack-card-one" /><button key={`${current.id}-${cardSerial}`} className={`card card-arriving ${flipped ? 'flip' : ''} ${exitDirection ? `card-exit exit-${exitDirection}` : ''}`} onClick={() => !exitDirection && setFlipped((state) => !state)} aria-label="Reveal player"><span className="card-inner">
+        : current ? <><div className="counter"><span>Card {Math.max(deck.length - queue.length + 1, 1)} of {deck.length}</span><span>{advanceNote || (flipped ? 'Rate your recall' : 'Tap the card to reveal')}</span></div><div className="card-stack"><span className="stack-card stack-card-two" /><span className="stack-card stack-card-one" /><button key={`${current.id}-${cardSerial}`} className={`card card-arriving ${flipped ? 'flip' : ''} ${exitDirection ? `card-exit exit-${exitDirection}` : ''}`} tabIndex={-1} onClick={(event) => { event.currentTarget.blur(); if (!exitDirection) setFlipped((state) => !state); }} aria-label="Reveal player"><span className="card-inner">
           <span className="face front"><small>PLAYER LAB <i>01</i></small>{current.clubBadgeUrl && <img className="crest" src={publicUrl(current.clubBadgeUrl)} alt="" />}<span className="portrait"><img src={publicUrl(current.photoUrl)} alt={`Portrait of ${current.name}`} /></span><em>Tap to reveal ↗</em></span>
-          <span className="face back"><small>SCOUTING REPORT <i>02</i></small><span className="identity"><img src={publicUrl(current.photoUrl)} alt="" /><span><strong>{current.displayName ?? current.name}</strong>{current.registeredName && current.registeredName !== (current.displayName ?? current.name) && <em className="registered-name">{current.registeredName}</em>}</span></span><span className="facts"><span><b>Club</b><i>{current.clubBadgeUrl && <img src={publicUrl(current.clubBadgeUrl)} alt="" />}{current.club ?? '—'}</i></span><span><b>Position</b><i>{current.position ?? '—'}</i></span><span><b>Nationality</b><i>{current.flagUrl && <img src={publicUrl(current.flagUrl)} alt="" />}{current.nationality ?? current.country ?? '—'}</i></span><span><b>Squad number</b><i>{current.shirtNumber ? `#${current.shirtNumber}` : '—'}</i></span></span><em className="source">Official {current.photoWidth === 500 ? '500px' : 'directory'} photo</em></span>
+          <span className="face back"><small>SCOUTING REPORT <i>02</i></small><span className="identity"><img src={publicUrl(current.photoUrl)} alt="" /><span>{currentCardName?.givenName && <b>{currentCardName.givenName}</b>}<strong>{currentCardName?.surname}</strong>{current.registeredName && current.registeredName !== (current.displayName ?? current.name) && <em className="registered-name">{current.registeredName}</em>}</span></span><span className="facts"><span><b>Club</b><i>{current.clubBadgeUrl && <img src={publicUrl(current.clubBadgeUrl)} alt="" />}{current.club ?? '—'}</i></span><span><b>Position</b><i>{current.position ?? '—'}</i></span><span><b>Nationality</b><i>{current.flagUrl && <img src={publicUrl(current.flagUrl)} alt="" />}{current.nationality ?? current.country ?? '—'}</i></span><span><b>Squad number</b><i>{current.shirtNumber ? `#${current.shirtNumber}` : '—'}</i></span></span><em className="source">Official {current.photoWidth === 500 ? '500px' : 'directory'} photo</em></span>
         </span></button></div><div className="ratings"><button disabled={Boolean(exitDirection)} onClick={() => answer('again')}><i>1</i> Don&rsquo;t know yet</button><button disabled={Boolean(exitDirection)} onClick={() => answer('known')}><i>2</i> I know it</button></div><p className="keys" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '7px 12px' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><kbd>↑</kbd><kbd>↓</kbd><kbd>Space</kbd> flip</span><span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><kbd>←</kbd><kbd>1</kbd> revisit</span><span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><kbd>→</kbd><kbd>2</kbd> known</span></p></>
         : <div className="finish empty"><p className="eyebrow">No matching cards</p><h2>Try widening your filters.</h2><button onClick={clear}>Show all players</button></div>}</section>
       <aside className="how" id="how"><p className="eyebrow">Your study flow</p><h2>Remember it for real.</h2><ol><li><b>01</b><span>See the face first. Take your best guess.</span></li><li><b>02</b><span>Flip for the answer and player profile.</span></li><li><b>03</b><span>Known cards leave the queue; misses return soon.</span></li></ol><div className="roster"><b>{data.count}</b><span>players with verified photos<br />Saved in your browser</span></div></aside>

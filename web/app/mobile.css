@@ -1,0 +1,23 @@
+@media (max-width: 760px) {
+  .layout {
+    display: flex;
+    flex-direction: column;
+    padding-top: 10px;
+  }
+
+  .stage {
+    order: 1;
+    width: 100%;
+  }
+
+  .filters {
+    display: block;
+    order: 2;
+    width: 100%;
+    margin: 24px 0 0;
+  }
+
+  .filter-toggle {
+    display: none;
+  }
+}
