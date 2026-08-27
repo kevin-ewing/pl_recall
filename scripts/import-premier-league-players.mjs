@@ -21,7 +21,7 @@ function option(name, fallback) {
 }
 
 const season = option("--season", "2026");
-const outputPath = resolve(option("--out", `data/premier-league-players-${season}.json`));
+const outputPath = resolve(option("--out", `web/public/data/premier-league-players-${season}.json`));
 const assetsPath = resolve(option("--assets-out", "web/public/assets"));
 
 function flagFileName(countryCode) {

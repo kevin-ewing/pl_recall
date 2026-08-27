@@ -30,16 +30,8 @@ jobs:
         working-directory: web
       - name: Refresh roster and official identity assets
         run: node scripts/import-premier-league-players.mjs --season 2026 --out web/public/data/premier-league-players-2026.json --assets-out web/public/assets
-      - run: npm run build
-        working-directory: web
-        env:
-          NEXT_PUBLIC_BASE_PATH: ${{ steps.pages.outputs.base_path }}
-      - name: Place framework assets at the Pages artifact root
-        run: |
-          if [ -n "${{ steps.pages.outputs.base_path }}" ]; then
-            mv "web/dist/client${{ steps.pages.outputs.base_path }}/_next" web/dist/client/_next
-            rmdir "web/dist/client${{ steps.pages.outputs.base_path }}"
-          fi
+      - name: Build the GitHub Pages artifact
+        run: node scripts/build-static.mjs --base-path "${{ steps.pages.outputs.base_path }}"
       - uses: actions/upload-pages-artifact@v3
         with:
           path: web/dist/client

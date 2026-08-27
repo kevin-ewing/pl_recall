@@ -33,6 +33,13 @@ const shuffle = <T,>(items: T[]) => {
   return next;
 };
 
+const INITIAL_HIGH_RES_CARDS = 8;
+const queueForDeck = (players: Player[]) => {
+  const highResolution = shuffle(players.filter((player) => player.photoWidth === 500).map((player) => player.id));
+  const remaining = shuffle(players.filter((player) => player.photoWidth !== 500).map((player) => player.id));
+  return [...highResolution.slice(0, INITIAL_HIGH_RES_CARDS), ...shuffle([...highResolution.slice(INITIAL_HIGH_RES_CARDS), ...remaining])];
+};
+
 function MultiPicker({ label, options, values, onChange }: { label: string; options: string[]; values: string[]; onChange: (values: string[]) => void }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -70,7 +77,6 @@ export default function Home() {
   const [query, setQuery] = useState('');
   const [queue, setQueue] = useState<string[]>([]);
   const [flipped, setFlipped] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
   const [cardSerial, setCardSerial] = useState(0);
   const [advanceNote, setAdvanceNote] = useState('');
   const [exitDirection, setExitDirection] = useState<'known' | 'again' | null>(null);
@@ -99,7 +105,7 @@ export default function Home() {
   const activeFilters = club.length + position.length + country.length + Number(hqOnly) + Number(Boolean(query));
 
   useEffect(() => {
-    const timer = window.setTimeout(() => { setQueue(shuffle(deck.map((player) => player.id))); setFlipped(false); }, 0);
+    const timer = window.setTimeout(() => { setQueue(queueForDeck(deck)); setFlipped(false); }, 0);
     return () => window.clearTimeout(timer);
   }, [deck]);
   useEffect(() => {
@@ -132,7 +138,7 @@ export default function Home() {
     advanceTimer.current = null;
     const ids = new Set(deck.map((player) => player.id));
     setProgress((old) => Object.fromEntries(Object.entries(old).filter(([id]) => !ids.has(id))));
-    setQueue(shuffle(deck.map((player) => player.id)));
+    setQueue(queueForDeck(deck));
     setFlipped(false);
     setExitDirection(null);
     setAdvanceNote('Fresh deck — every player is back in');
@@ -145,7 +151,7 @@ export default function Home() {
   return <main className="app">
     <section className="hero" id="top"><div><a className="brand page-logo" href="#top"><b>PL</b><span><strong>PLAYER</strong> LAB</span></a><p className="eyebrow">Learn the league, one face at a time</p><h1>Who&rsquo;s <em>that</em> player?</h1><p>Train your Premier League memory with a repeat-until-you-know-it flashcard flow.</p></div><div className="deck-total"><b>{deck.length}</b><span>cards in this deck</span></div></section>
     <div className="layout" id="study">
-      <aside className={`filters ${showFilters ? 'open' : ''}`} id="filters"><div className="filter-head"><div><p className="eyebrow">Build your deck</p><h2>Filters</h2></div><button onClick={clear}>Clear all</button></div>
+      <aside className="filters" id="filters"><div className="filter-head"><div><p className="eyebrow">Build your deck</p><h2>Filters</h2></div><button onClick={clear}>Clear all</button></div>
         <label>Search player<input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="e.g. Bukayo Saka" /></label>
         <MultiPicker label="Club" options={clubs as string[]} values={club} onChange={setClub} />
         <MultiPicker label="Position" options={positions as string[]} values={position} onChange={setPosition} />
@@ -153,7 +159,7 @@ export default function Home() {
         <label className="quality-toggle"><input type="checkbox" checked={hqOnly} onChange={(event) => setHqOnly(event.target.checked)} />High resolution headshots only</label>
         <footer>{activeFilters ? `${activeFilters} active filter${activeFilters === 1 ? '' : 's'}` : 'Whole league selected'}<small>Progress stays on this device.</small></footer>
       </aside>
-      <section className="stage" aria-live="polite"><div className="toolbar"><button className="filter-toggle" onClick={() => setShowFilters((state) => !state)}>☰ Filters {activeFilters ? `(${activeFilters})` : ''}</button><p><span>MASTERED</span><b>{mastered} / {deck.length}</b></p><div className="meter"><span style={{ width: `${deck.length ? mastered / deck.length * 100 : 0}%` }} /></div><button className="restart" onClick={restart}>↻ Restart deck</button></div>
+      <section className="stage" aria-live="polite"><div className="toolbar"><p><span>MASTERED</span><b>{mastered} / {deck.length}</b></p><div className="meter"><span style={{ width: `${deck.length ? mastered / deck.length * 100 : 0}%` }} /></div><button className="restart" onClick={restart}>↻ Restart deck</button></div>
         {!current && deck.length > 0 ? <div className="finish"><div>✦</div><p className="eyebrow">Deck complete</p><h2>Every card is cleared.</h2><p>You&rsquo;ve marked all {deck.length} players as known.</p><button onClick={restart}>Run it again</button><button className="plain" onClick={reset}>Reset progress</button></div>
         : current ? <><div className="counter"><span>Card {Math.max(deck.length - queue.length + 1, 1)} of {deck.length}</span><span>{advanceNote || (flipped ? 'Rate your recall' : 'Tap the card to reveal')}</span></div><div className="card-stack"><span className="stack-card stack-card-two" /><span className="stack-card stack-card-one" /><button key={`${current.id}-${cardSerial}`} className={`card card-arriving ${flipped ? 'flip' : ''} ${exitDirection ? `card-exit exit-${exitDirection}` : ''}`} tabIndex={-1} onClick={(event) => { event.currentTarget.blur(); if (!exitDirection) setFlipped((state) => !state); }} aria-label="Reveal player"><span className="card-inner">
           <span className="face front"><small>PLAYER LAB <i>01</i></small>{current.clubBadgeUrl && <img className="crest" src={publicUrl(current.clubBadgeUrl)} alt="" />}<span className="portrait"><img src={publicUrl(current.photoUrl)} alt={`Portrait of ${current.name}`} /></span><em>Tap to reveal ↗</em></span>

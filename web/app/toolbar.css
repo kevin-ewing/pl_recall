@@ -4,11 +4,6 @@
   column-gap: 16px;
 }
 
-.toolbar .filter-toggle {
-  position: absolute;
-  left: 0;
-}
-
 .toolbar .restart {
   justify-self: auto;
 }
