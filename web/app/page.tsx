@@ -93,8 +93,10 @@ export default function Home() {
   }, [deck]);
   useEffect(() => {
     const keydown = (event: KeyboardEvent) => {
-      if (['INPUT', 'SELECT'].includes((event.target as HTMLElement).tagName) || !current) return;
-      if (event.key === ' ' || event.key === 'Enter') { event.preventDefault(); setFlipped((state) => !state); }
+      if (['INPUT', 'SELECT', 'TEXTAREA'].includes((event.target as HTMLElement).tagName) || !current) return;
+      if (event.key === ' ' || event.key === 'Enter' || event.key === 'ArrowUp' || event.key === 'ArrowDown') { event.preventDefault(); setFlipped((state) => !state); }
+      if (event.key === 'ArrowLeft') { event.preventDefault(); answer('again'); }
+      if (event.key === 'ArrowRight') { event.preventDefault(); answer('known'); }
       if (event.key === '1') answer('again');
       if (event.key === '2') answer('known');
     };
@@ -112,7 +114,7 @@ export default function Home() {
       setCardSerial((serial) => serial + 1);
       setExitDirection(null);
       advanceTimer.current = null;
-    }, 240);
+    }, 150);
   }
   const restart = () => {
     if (advanceTimer.current) window.clearTimeout(advanceTimer.current);
@@ -145,7 +147,7 @@ export default function Home() {
         : current ? <><div className="counter"><span>Card {Math.max(deck.length - queue.length + 1, 1)} of {deck.length}</span><span>{advanceNote || (flipped ? 'Rate your recall' : 'Tap the card to reveal')}</span></div><div className="card-stack"><span className="stack-card stack-card-two" /><span className="stack-card stack-card-one" /><button key={`${current.id}-${cardSerial}`} className={`card card-arriving ${flipped ? 'flip' : ''} ${exitDirection ? `card-exit exit-${exitDirection}` : ''}`} onClick={() => !exitDirection && setFlipped((state) => !state)} aria-label="Reveal player"><span className="card-inner">
           <span className="face front"><small>PLAYER LAB <i>01</i></small>{current.clubBadgeUrl && <img className="crest" src={publicUrl(current.clubBadgeUrl)} alt="" />}<span className="portrait"><img src={publicUrl(current.photoUrl)} alt={`Portrait of ${current.name}`} /></span><em>Tap to reveal ↗</em></span>
           <span className="face back"><small>SCOUTING REPORT <i>02</i></small><span className="identity"><img src={publicUrl(current.photoUrl)} alt="" /><span><strong>{current.displayName ?? current.name}</strong>{current.registeredName && current.registeredName !== (current.displayName ?? current.name) && <em className="registered-name">{current.registeredName}</em>}</span></span><span className="facts"><span><b>Club</b><i>{current.clubBadgeUrl && <img src={publicUrl(current.clubBadgeUrl)} alt="" />}{current.club ?? '—'}</i></span><span><b>Position</b><i>{current.position ?? '—'}</i></span><span><b>Nationality</b><i>{current.flagUrl && <img src={publicUrl(current.flagUrl)} alt="" />}{current.nationality ?? current.country ?? '—'}</i></span><span><b>Squad number</b><i>{current.shirtNumber ? `#${current.shirtNumber}` : '—'}</i></span></span><em className="source">Official {current.photoWidth === 500 ? '500px' : 'directory'} photo</em></span>
-        </span></button></div><div className="ratings"><button disabled={Boolean(exitDirection)} onClick={() => answer('again')}><i>1</i> Don&rsquo;t know yet</button><button disabled={Boolean(exitDirection)} onClick={() => answer('known')}><i>2</i> I know it</button></div><p className="keys"><kbd>Space</kbd> flip · <kbd>1</kbd> revisit · <kbd>2</kbd> known</p></>
+        </span></button></div><div className="ratings"><button disabled={Boolean(exitDirection)} onClick={() => answer('again')}><i>1</i> Don&rsquo;t know yet</button><button disabled={Boolean(exitDirection)} onClick={() => answer('known')}><i>2</i> I know it</button></div><p className="keys" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '7px 12px' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><kbd>↑</kbd><kbd>↓</kbd><kbd>Space</kbd> flip</span><span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><kbd>←</kbd><kbd>1</kbd> revisit</span><span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><kbd>→</kbd><kbd>2</kbd> known</span></p></>
         : <div className="finish empty"><p className="eyebrow">No matching cards</p><h2>Try widening your filters.</h2><button onClick={clear}>Show all players</button></div>}</section>
       <aside className="how" id="how"><p className="eyebrow">Your study flow</p><h2>Remember it for real.</h2><ol><li><b>01</b><span>See the face first. Take your best guess.</span></li><li><b>02</b><span>Flip for the answer and player profile.</span></li><li><b>03</b><span>Known cards leave the queue; misses return soon.</span></li></ol><div className="roster"><b>{data.count}</b><span>players with verified photos<br />Saved in your browser</span></div></aside>
     </div>
