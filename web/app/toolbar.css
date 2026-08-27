@@ -1,0 +1,23 @@
+.toolbar {
+  position: relative;
+  grid-template-columns: auto minmax(80px, 1fr) auto;
+  column-gap: 16px;
+}
+
+.toolbar .filter-toggle {
+  position: absolute;
+  left: 0;
+}
+
+.toolbar .restart {
+  justify-self: auto;
+}
+
+.toolbar .meter {
+  margin: 0;
+}
+
+.filters .quality-toggle {
+  white-space: nowrap;
+  font-size: 10px;
+}

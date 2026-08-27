@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import './mobile.css';
 import './motion.css';
+import './toolbar.css';
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
 const siteUrl = 'https://kevin-ewing.github.io/pl_recall';
