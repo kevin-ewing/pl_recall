@@ -34,6 +34,12 @@ jobs:
         working-directory: web
         env:
           NEXT_PUBLIC_BASE_PATH: ${{ steps.pages.outputs.base_path }}
+      - name: Place framework assets at the Pages artifact root
+        run: |
+          if [ -n "${{ steps.pages.outputs.base_path }}" ]; then
+            mv "web/dist/client${{ steps.pages.outputs.base_path }}/_next" web/dist/client/_next
+            rmdir "web/dist/client${{ steps.pages.outputs.base_path }}"
+          fi
       - uses: actions/upload-pages-artifact@v3
         with:
           path: web/dist/client
