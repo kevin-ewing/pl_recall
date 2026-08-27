@@ -13,6 +13,7 @@ const STANDARD_RES_PHOTO_ORIGIN = "https://resources.premierleague.com/premierle
 const ASSET_ORIGIN = "https://resources.premierleague.com/premierleague25";
 const PAGE_SIZE = 100;
 const PHOTO_CONCURRENCY = 8;
+const PLAYER_NAME_BATCH_SIZE = 100;
 
 function option(name, fallback) {
   const index = process.argv.indexOf(name);
@@ -87,6 +88,32 @@ const candidates = sourcePlayers.map((player) => {
   };
 });
 
+async function getDisplayNames(playerIds) {
+  const names = new Map();
+  for (let index = 0; index < playerIds.length; index += PLAYER_NAME_BATCH_SIZE) {
+    const idsForBatch = playerIds.slice(index, index + PLAYER_NAME_BATCH_SIZE);
+    const url = new URL("/api/v2/players-by-id", API_ORIGIN);
+    url.searchParams.set("id", idsForBatch.join(","));
+    const response = await fetch(url, { headers: { Accept: "application/json" } });
+    if (!response.ok) throw new Error(`Premier League display-name API returned ${response.status}.`);
+    const batch = await response.json();
+    if (!Array.isArray(batch)) throw new Error("Unexpected Premier League display-name response.");
+    for (const player of batch) {
+      const displayName = player.knownName || player.name;
+      if (player.id && displayName) names.set(String(player.id), displayName);
+    }
+  }
+  return names;
+}
+
+const displayNames = await getDisplayNames(candidates.map((player) => player.id));
+const namedCandidates = candidates.map((player) => {
+  const registeredName = player.name;
+  const displayName = displayNames.get(player.id) || registeredName;
+  return { ...player, name: displayName, displayName, registeredName };
+});
+console.log(`Added official display names for ${displayNames.size} players.`);
+
 async function hasOfficialPhoto(url) {
   try {
     // The directory uses the same request and falls back to its generic image
@@ -137,7 +164,7 @@ async function keepPlayersWithPhotos(players) {
   return resolved.filter(Boolean);
 }
 
-const players = await keepPlayersWithPhotos(candidates);
+const players = await keepPlayersWithPhotos(namedCandidates);
 
 async function downloadSvg(url, filePath) {
   try {

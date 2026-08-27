@@ -6,6 +6,7 @@ export const dynamic = 'force-static';
 
 type Player = {
   id: string; name: string; firstName: string; lastName: string;
+  displayName?: string; registeredName?: string;
   club: string | null; clubBadgeUrl: string | null; position: string | null; shirtNumber: number | null;
   country: string | null; nationality: string | null; flagUrl: string | null;
   photoUrl: string; photoWidth: number;
@@ -73,7 +74,7 @@ export default function Home() {
 
   const players = useMemo(() => data?.players ?? [], [data]);
   const deck = useMemo(() => players.filter((player) => {
-    const words = `${player.name} ${player.club} ${player.position} ${player.country}`.toLowerCase();
+    const words = `${player.name} ${player.displayName} ${player.registeredName} ${player.club} ${player.position} ${player.country}`.toLowerCase();
     return (club.length === 0 || club.includes(player.club ?? '')) && (position.length === 0 || position.includes(player.position ?? '')) &&
       (country.length === 0 || country.includes(player.country ?? '')) && (!hqOnly || player.photoWidth === 500) &&
       (!query || words.includes(query.toLowerCase()));
@@ -111,7 +112,7 @@ export default function Home() {
       setCardSerial((serial) => serial + 1);
       setExitDirection(null);
       advanceTimer.current = null;
-    }, 380);
+    }, 240);
   }
   const restart = () => {
     if (advanceTimer.current) window.clearTimeout(advanceTimer.current);
@@ -143,7 +144,7 @@ export default function Home() {
         {!current && deck.length > 0 ? <div className="finish"><div>✦</div><p className="eyebrow">Deck complete</p><h2>Every card is cleared.</h2><p>You&rsquo;ve marked all {deck.length} players as known.</p><button onClick={restart}>Run it again</button><button className="plain" onClick={reset}>Reset progress</button></div>
         : current ? <><div className="counter"><span>Card {Math.max(deck.length - queue.length + 1, 1)} of {deck.length}</span><span>{advanceNote || (flipped ? 'Rate your recall' : 'Tap the card to reveal')}</span></div><div className="card-stack"><span className="stack-card stack-card-two" /><span className="stack-card stack-card-one" /><button key={`${current.id}-${cardSerial}`} className={`card card-arriving ${flipped ? 'flip' : ''} ${exitDirection ? `card-exit exit-${exitDirection}` : ''}`} onClick={() => !exitDirection && setFlipped((state) => !state)} aria-label="Reveal player"><span className="card-inner">
           <span className="face front"><small>PLAYER LAB <i>01</i></small>{current.clubBadgeUrl && <img className="crest" src={publicUrl(current.clubBadgeUrl)} alt="" />}<span className="portrait"><img src={publicUrl(current.photoUrl)} alt={`Portrait of ${current.name}`} /></span><em>Tap to reveal ↗</em></span>
-          <span className="face back"><small>SCOUTING REPORT <i>02</i></small><span className="identity"><img src={publicUrl(current.photoUrl)} alt="" /><span><b>{current.firstName}</b><strong>{current.lastName}</strong></span></span><span className="facts"><span><b>Club</b><i>{current.clubBadgeUrl && <img src={publicUrl(current.clubBadgeUrl)} alt="" />}{current.club ?? '—'}</i></span><span><b>Position</b><i>{current.position ?? '—'}</i></span><span><b>Nationality</b><i>{current.flagUrl && <img src={publicUrl(current.flagUrl)} alt="" />}{current.nationality ?? current.country ?? '—'}</i></span><span><b>Squad number</b><i>{current.shirtNumber ? `#${current.shirtNumber}` : '—'}</i></span></span><em className="source">Official {current.photoWidth === 500 ? '500px' : 'directory'} photo</em></span>
+          <span className="face back"><small>SCOUTING REPORT <i>02</i></small><span className="identity"><img src={publicUrl(current.photoUrl)} alt="" /><span><strong>{current.displayName ?? current.name}</strong>{current.registeredName && current.registeredName !== (current.displayName ?? current.name) && <em className="registered-name">{current.registeredName}</em>}</span></span><span className="facts"><span><b>Club</b><i>{current.clubBadgeUrl && <img src={publicUrl(current.clubBadgeUrl)} alt="" />}{current.club ?? '—'}</i></span><span><b>Position</b><i>{current.position ?? '—'}</i></span><span><b>Nationality</b><i>{current.flagUrl && <img src={publicUrl(current.flagUrl)} alt="" />}{current.nationality ?? current.country ?? '—'}</i></span><span><b>Squad number</b><i>{current.shirtNumber ? `#${current.shirtNumber}` : '—'}</i></span></span><em className="source">Official {current.photoWidth === 500 ? '500px' : 'directory'} photo</em></span>
         </span></button></div><div className="ratings"><button disabled={Boolean(exitDirection)} onClick={() => answer('again')}><i>1</i> Don&rsquo;t know yet</button><button disabled={Boolean(exitDirection)} onClick={() => answer('known')}><i>2</i> I know it</button></div><p className="keys"><kbd>Space</kbd> flip · <kbd>1</kbd> revisit · <kbd>2</kbd> known</p></>
         : <div className="finish empty"><p className="eyebrow">No matching cards</p><h2>Try widening your filters.</h2><button onClick={clear}>Show all players</button></div>}</section>
       <aside className="how" id="how"><p className="eyebrow">Your study flow</p><h2>Remember it for real.</h2><ol><li><b>01</b><span>See the face first. Take your best guess.</span></li><li><b>02</b><span>Flip for the answer and player profile.</span></li><li><b>03</b><span>Known cards leave the queue; misses return soon.</span></li></ol><div className="roster"><b>{data.count}</b><span>players with verified photos<br />Saved in your browser</span></div></aside>
